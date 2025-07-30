@@ -34,12 +34,13 @@ def init_db():
         );
         
         CREATE TABLE IF NOT EXISTS user_sessions (
-            session_id TEXT PRIMARY KEY,
+            sid TEXT PRIMARY KEY,
             uid TEXT NOT NULL,
             user_agent TEXT NOT NULL,
             ip_address TEXT NOT NULL,
             is_active BOOLEAN NOT NULL DEFAULT 1,
             last_accessed TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+            update_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
             expires_at TIMESTAMP NOT NULL,
             created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
             FOREIGN KEY (uid) REFERENCES users(uid)

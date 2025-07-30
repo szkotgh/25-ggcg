@@ -3,6 +3,7 @@ import smtplib
 import os
 import threading
 import queue
+import src.utils as utils
 from flask import render_template
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -58,10 +59,16 @@ class EmailSender:
         plain = f'이메일 인증을 위한 코드는 {code}입니다.'
         html = render_template('email/send_verification_code_email.html', receiver_email=receiver_email, code=code)
         self.send_email(receiver_email, subject, plain, html)
-        
-    def send_session_created_email(self, receiver_email: str, session_id: str):
-        session_info = db.session.get_info(session_id)
-        user_info = db.user.get_info(session_info['uid'])
+
+    def send_welcome_email(self, receiver_email: str, user_info: utils.ResultDTO):
+        subject = '[스마일알러지] 회원가입을 환영합니다'
+        plain = f'안녕하세요 {user_info.data["user_info"]["name"]}님, 서비스 가입을 환영합니다.'
+        html = render_template('email/welcome_service_email.html', user_info=user_info.data["user_info"])
+        self.send_email(receiver_email, subject, plain, html)
+    
+    def send_session_created_email(self, receiver_email: str, sid: str):
+        session_info = db.session.get_info(sid).data['session_info']
+        user_info = db.user.get_info(session_info['uid']).data['user_info']
         subject = '[스마일알러지] 로그인 알림'
         plain = f'로그인 알림: {user_info["name"]}님, 새로운 환경에서 로그인 되었습니다.'
         html = render_template('email/session_created_email.html', user_info=user_info, session_info=session_info)

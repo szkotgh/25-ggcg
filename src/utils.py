@@ -5,13 +5,26 @@ from datetime import datetime, timedelta
 
 from flask import request
 
-# Generate
-def return_result(code, message, data=None):
-    return {
-        'code': code,
-        'message': message,
-        'data': data
-    }, code
+class ResultDTO:
+    def __init__(self, code: int | bool, message: str, data=None, result: bool = False):
+        self.code = code
+        self.message = message
+        self.data = data
+        self.result = result
+
+    def to_dict(self):
+        return {
+            'code': self.code,
+            'message': self.message,
+            'data': self.data
+        }
+        
+    def to_response(self):
+        return {
+            'code': self.code,
+            'message': self.message,
+            'data': self.data
+        }, self.code
 
 def get_client_ip():
     client_ip = request.headers.get("X-Forwarded-For")
@@ -34,7 +47,7 @@ def str_to_hash(text: str) -> str:
 
 # Datetime
 def get_current_datetime() -> datetime:
-    return datetime.now()
+    return datetime.now() 
 
 def get_current_datetime_str() -> str:
     return datetime.now().strftime('%Y-%m-%d %H:%M:%S')
@@ -44,7 +57,9 @@ def str_to_datetime(date_str: str) -> datetime:
 
 def is_minutes_passed(start_time: str, minutes: int) -> bool:
     start_dt = datetime.strptime(start_time, '%Y-%m-%d %H:%M:%S')
-    return (datetime.now() - start_dt).total_seconds() >= minutes * 60
+    now = datetime.now()
+    target_time = start_dt + timedelta(minutes=minutes)
+    return now > target_time
 
 def get_future_timestamp(days: int = 0, hours: int = 0, minutes: int = 0, seconds: int = 0) -> str:
     future_time = datetime.now() + timedelta(days=days, hours=hours, minutes=minutes, seconds=seconds)

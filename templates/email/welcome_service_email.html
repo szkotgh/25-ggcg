@@ -1,0 +1,17 @@
+안녕하세요, {{ user_info.name }}님.<br>
+스마일알러지 서비스에 가입해 주셔서 감사합니다.<br><br>
+
+가입하신 정보는 아래와 같습니다.
+
+<table border="0" cellspacing="0" cellpadding="4" style="padding: 1.5em">
+    <tr>
+        <td>로그인 ID</td>
+        <td><strong>{{ user_info.email }}</strong></td>
+    </tr>
+    <tr>
+        <td>가입 시간</td>
+        <td><strong>{{ user_info.created_at }}</strong></td>
+    </tr>
+</table>
+
+즐거운 경험 되세요.
