@@ -1,0 +1,23 @@
+안녕하세요, {{ user_info.name }}님.<br />
+새로운 환경에서 로그인 되었습니다.
+
+<table border="0" cellspacing="0" cellpadding="4" style="padding: 1.5em">
+    <tr>
+        <td>로그인 ID</td>
+        <td><strong>{{ user_info.email }}</strong></td>
+    </tr>
+    <tr>
+        <td>로그인 시간</td>
+        <td><strong>{{ session_info.created_at }}</strong></td>
+    </tr>
+    <tr>
+        <td>운영체제/브라우저</td>
+        <td><strong>{{ session_info.user_agent }}</strong></td>
+    </tr>
+    <tr>
+        <td>로그인 IP</td>
+        <td><strong>{{ session_info.ip_address }}</strong></td>
+    </tr>
+</table>
+
+<i>본인이 아닐 경우, <strong><i>즉시 비밀번호를 변경하십시오.</i></strong></i>

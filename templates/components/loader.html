@@ -1,0 +1,66 @@
+<div id="global-loader" style="position:fixed;z-index:99999;top:0;left:0;width:100vw;height:100vh;display:flex;align-items:center;justify-content:center;background:rgba(30,30,30,0.4);backdrop-filter:blur(6px);opacity:1;transition:opacity 0.5s ease-in-out;">
+  <div class="loader-spinner">
+    <svg width="60" height="60" viewBox="0 0 50 50">
+      <g class="spinner-rotate">
+        <circle cx="25" cy="25" r="20" fill="none" stroke="#fff" stroke-width="5" stroke-linecap="round" stroke-dasharray="31.4 31.4" stroke-dashoffset="0"/>
+      </g>
+    </svg>
+  </div>
+</div>
+
+<style>
+  #global-loader {
+    pointer-events: all;
+  }
+
+  #global-loader.fadeout {
+    opacity: 0 !important;
+  }
+
+  .loader-spinner {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: fadein-loader 0.5s;
+  }
+
+  .spinner-rotate {
+    animation: spin 1s linear infinite;
+    transform-origin: center;
+  }
+
+  .spinner-rotate.fast {
+    animation-duration: 0.4s !important;
+  }
+
+  @keyframes fadein-loader {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+</style>
+
+<script>
+  document.addEventListener('DOMContentLoaded', function () {
+    const loader = document.getElementById('global-loader');
+    const spinner = loader?.querySelector('.spinner-rotate');
+
+    if (loader && spinner) {
+      window.addEventListener('load', function () {
+        spinner.classList.add('fast');
+        setTimeout(function () {
+          loader.classList.add('fadeout');
+          setTimeout(function () {
+            if (loader.parentNode) {
+              loader.parentNode.removeChild(loader);
+            }
+          }, 500);
+        }, 100);
+      });
+    }
+  });
+</script>

@@ -1,0 +1,235 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<div class="login-container">   
+    <h2>회원가입</h2>
+    
+    {% if request.args.get('error') %}
+    <div class="error-message">
+        {{ request.args.get('error') }}
+    </div>
+    {% endif %}
+    
+    <form method="POST" action="{{ url_for('router.user.signup') }}" id="signupForm">
+        <div class="form-group">
+            <label for="email">이메일:</label>
+            <input type="email" id="email" name="email" required>
+        </div>
+        <div class="form-group">
+            <label for="password">비밀번호:</label>
+            <input type="password" id="password" name="password" required>
+        </div>
+        <div class="form-group">
+            <label for="password_confirm">비밀번호확인:</label>
+            <input type="password" id="password_confirm" name="password_confirm" required>
+        </div>
+        <div class="form-group">
+            <label for="display_name">이름:</label>
+            <input type="text" id="display_name" name="display_name" required>
+        </div>
+        
+        <div class="form-group">
+            <div style="display: flex; gap: 10px;">
+                <label for="verification_code">인증 코드:</label>
+                <input type="text" id="verification_code" name="verification_code" placeholder="6자리 코드를 입력해주세요" maxlength="6" style="width: 200px; min-width: 100px;">
+                <button type="button" id="sendCodeBtn" onclick="sendOrResendVerificationCode()">인증코드 발송</button>
+            </div>
+            <small id="codeMessage" style="color: #666;"></small>
+        </div>
+
+        <button type="submit" id="submitBtn" disabled>회원가입</button>
+    </form>
+</div>
+
+<script>
+    let passwordVerified = false;
+    let emailVerified = false;
+    let resendTimer = null;
+    let codeSent = false;
+
+    const sendCodeBtn = document.getElementById('sendCodeBtn');
+    const codeMessage = document.getElementById('codeMessage');
+    const emailInput = document.getElementById('email');
+    const passwordInput = document.getElementById('password');
+    const passwordConfirmInput = document.getElementById('password_confirm');
+    const displayNameInput = document.getElementById('display_name');
+    const verificationCodeInput = document.getElementById('verification_code');
+    const submitBtn = document.getElementById('submitBtn');
+
+    function checkInputs() {
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+        const confirmPassword = passwordConfirmInput.value;
+        const displayName = displayNameInput.value.trim();
+
+        passwordVerified = (password === confirmPassword && password.length >= 8);
+        const allValid = email && passwordVerified && displayName;
+
+        sendCodeBtn.disabled = !allValid || codeSent;
+    }
+
+    emailInput.addEventListener('input', checkInputs);
+    passwordInput.addEventListener('input', checkInputs);
+    passwordConfirmInput.addEventListener('input', checkInputs);
+    displayNameInput.addEventListener('input', checkInputs);
+
+    passwordConfirmInput.addEventListener('input', () => {
+        checkInputs();
+    });
+
+    async function sendOrResendVerificationCode() {
+        const email = emailInput.value.trim();
+        const displayName = displayNameInput.value.trim();
+        let url = '/user/send-verification-code';
+        let sendingText = '발송 중...';
+        let successText = '인증코드가 이메일로 발송되었습니다.';
+        let failText = '인증코드 발송에 실패했습니다.';
+
+        if (!email) {
+            codeMessage.textContent = '이메일을 입력해주세요.';
+            codeMessage.style.color = '#dc3545';
+            return;
+        }
+        if (!displayName) {
+            codeMessage.textContent = '이름을 입력해주세요.';
+            codeMessage.style.color = '#dc3545';
+            return;
+        }
+        if (!passwordVerified) {
+            codeMessage.textContent = '비밀번호가 일치하지 않거나 너무 짧습니다.';
+            codeMessage.style.color = '#dc3545';
+            return;
+        }
+
+        if (!codeSent && !confirm(`이메일: ${email}\n이름: ${displayName}\n\n해당 정보로 가입하시겠습니까?`)) {
+            return;
+        }
+        if (codeSent && !confirm('인증코드를 다시 발송하시겠습니까?')) {
+            return;
+        }
+
+        emailInput.readOnly = true;
+        passwordInput.readOnly = true;
+        passwordConfirmInput.readOnly = true;
+        displayNameInput.readOnly = true;
+        sendCodeBtn.disabled = true;
+
+        if (codeSent) {
+            url = '/user/resend-verification-code';
+            sendingText = '재발송 중...';
+            successText = '인증코드가 재발송되었습니다.';
+            failText = '재발송에 실패했습니다.';
+        }
+
+        try {
+            sendCodeBtn.disabled = true;
+            sendCodeBtn.textContent = sendingText;
+
+            const response = await fetch(url, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ 
+                    email: email,
+                    display_name: displayName
+                })
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                codeMessage.textContent = successText;
+                codeMessage.style.color = '#28a745';
+                codeSent = true;
+                startResendTimer();
+            } else {
+                codeMessage.textContent = data.message || failText;
+                codeMessage.style.color = '#dc3545';
+                sendCodeBtn.disabled = false;
+                sendCodeBtn.textContent = codeSent ? '재발송' : '인증코드 발송';
+            }
+        } catch (error) {
+            codeMessage.textContent = '네트워크 오류가 발생했습니다.';
+            codeMessage.style.color = '#dc3545';
+            sendCodeBtn.disabled = false;
+            sendCodeBtn.textContent = codeSent ? '재발송' : '인증코드 발송';
+        }
+    }
+
+    function startResendTimer() {
+        let countdown = 60;
+        sendCodeBtn.disabled = true;
+        sendCodeBtn.textContent = `재발송 (${countdown}s)`;
+
+        resendTimer = setInterval(() => {
+            countdown--;
+            sendCodeBtn.textContent = `재발송 (${countdown}s)`;
+
+            if (countdown <= 0) {
+                clearInterval(resendTimer);
+                sendCodeBtn.disabled = false;
+                sendCodeBtn.textContent = '재발송';
+            }
+        }, 1000);
+    }
+
+    verificationCodeInput.addEventListener('input', async () => {
+        const code = verificationCodeInput.value;
+        const email = emailInput.value.trim();
+        
+        if (!codeSent) {
+            return;
+        }
+
+        if (code.length === 6 && email) {
+            try {
+                const response = await fetch('/user/verify-email-code', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ email: email, code: code })
+                });
+                
+                const data = await response.json();
+                
+                if (data.success) {
+                    codeMessage.textContent = '이메일 인증이 완료되었습니다.';
+                    codeMessage.style.color = '#28a745';
+                    emailVerified = true;
+                    submitBtn.disabled = false;
+                } else {
+                    codeMessage.textContent = '잘못된 인증코드입니다.';
+                    codeMessage.style.color = '#dc3545';
+                    emailVerified = false;
+                    submitBtn.disabled = true;
+                }
+            } catch (error) {
+                codeMessage.textContent = '인증코드 확인 중 오류가 발생했습니다.';
+                codeMessage.style.color = '#dc3545';
+                emailVerified = false;
+                submitBtn.disabled = true;
+            }
+        } else {
+            emailVerified = false;
+            submitBtn.disabled = true;
+            if (code.length > 0) {
+                codeMessage.textContent = '6자리 인증코드를 입력해주세요.';
+                codeMessage.style.color = '#666';
+            }
+        }
+    });
+
+    document.getElementById('signupForm').addEventListener('submit', (e) => {
+        if (!emailVerified) {
+            e.preventDefault();
+            alert('이메일 인증을 완료해주세요.');
+        }
+    });
+
+    checkInputs();
+</script>
+
+{% endblock %}
