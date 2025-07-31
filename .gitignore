@@ -2,3 +2,5 @@ __pycache__/
 
 .env
 db/main.db
+
+db/profiles/*
