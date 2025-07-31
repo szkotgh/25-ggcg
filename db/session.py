@@ -92,7 +92,7 @@ def get_info(sid: str) -> utils.ResultDTO:
     # 없는 세션 ID인 경우 실패 처리
     if not row:
         db.close_db_connection(conn)
-        return utils.ResultDTO(code=404, message="유효하지 않은 세션 ID입니다.", result=False)
+        return utils.ResultDTO(code=401, message="유효하지 않은 세션 ID입니다.", result=False)
 
     # 현재 시간이 expires_at을 초과한 경우 실패 처리(is_active도 0으로 설정)
     if utils.get_current_datetime() > utils.str_to_datetime(row['expires_at']):

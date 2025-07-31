@@ -45,6 +45,22 @@ def init_db():
             created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
             FOREIGN KEY (uid) REFERENCES users(uid)
         );
+        
+        CREATE TABLE IF NOT EXISTS foods (
+            fid TEXT PRIMARY KEY,
+            uid TEXT NOT NULL,
+            name TEXT NOT NULL,
+            type TEXT NOT NULL,
+            description TEXT NOT NULL,
+            count INTEGER NOT NULL DEFAULT 0,
+            volume TEXT DEFAULT NULL,
+            image_url TEXT DEFAULT NULL,
+            barcode TEXT NOT NULL,
+            expiration_date_desc TEXT,
+            expiration_date DATE NOT NULL,
+            created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+            FOREIGN KEY (uid) REFERENCES users(uid)
+        );
     ''')
     
     conn.commit()
