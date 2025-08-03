@@ -76,21 +76,20 @@ PASSWORD_RE = re.compile(r'^(?=.*[A-Za-z])(?=.*\d)(?=.*[\W_]).{8,256}$') # 최�
 VALIDDATE_CODE_RE = re.compile(r'^\d{6}$')  # 6자리 숫자 코드
 BARCODE_RE = re.compile(r'^\d{12,13}$')  # 12자리 또는 13자리 숫자 바코드
 
-def is_valid_email(email: str) -> bool:
-    return bool(EMAIL_RE.match(email))
+def is_valid_email(email) -> bool:
+    return bool(EMAIL_RE.match(str(email)))
 
-def is_valid_username(username: str) -> bool:
-    return bool(USERNAME_RE.match(username))
+def is_valid_username(username) -> bool:
+    return bool(USERNAME_RE.match(str(username)))
 
-def is_valid_password(password: str) -> bool:
-    return bool(PASSWORD_RE.match(password))
+def is_valid_password(password) -> bool:
+    return bool(PASSWORD_RE.match(str(password)))
 
-def is_valid_verification_code(code: str) -> bool:
-    return bool(VALIDDATE_CODE_RE.match(code))
+def is_valid_verification_code(code) -> bool:
+    return bool(VALIDDATE_CODE_RE.match(str(code)))
 
-def is_valid_barcode(barcode: str) -> bool:
-    return bool(BARCODE_RE.match(barcode))
-
+def is_valid_barcode(barcode) -> bool:
+    return bool(BARCODE_RE.match(str(barcode)))
 
 def extract_months(text) -> int | None:
     match = re.search(r'(\d+)\s*개월', text)
