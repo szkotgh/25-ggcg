@@ -101,6 +101,7 @@ def regi_food_with_barcode(sid:str, barcode:str, food_count:int) -> utils.Result
         # get Food name, type, expiration date
         foodsafety_api_url = f"http://openapi.foodsafetykorea.go.kr/api/{os.environ['FOODSAFETYKOREA_API_KEY']}/C005/json/1/100/BAR_CD={barcode}"
         response = requests.get(foodsafety_api_url)
+        response.raise_for_status()
         response_json = response.json()
         row = response_json['C005']['row'][0]
         food_name = row['PRDLST_NM']
@@ -114,7 +115,7 @@ def regi_food_with_barcode(sid:str, barcode:str, food_count:int) -> utils.Result
         food_volume = response_json['originVolume']
         food_image_url = response_json['images'][0]
     except:
-        pass
+        return utils.ResultDTO(code=400, message="식품 정보를 찾을 수 없습니다.", result=False)
     
     # DB 작성
     fid = utils.gen_hash(16)
@@ -131,4 +132,4 @@ def regi_food_with_barcode(sid:str, barcode:str, food_count:int) -> utils.Result
         db.close_db_connection(conn)
         return utils.ResultDTO(code=409, message="등록 중 오류가 발생했습니다.", result=False)
 
-    return utils.ResultDTO(code=200, message="등록 성공", data=get_info(sid, fid).data, result=True)
+    return utils.ResultDTO(code=200, message="식품 등록 성공", data=get_info(sid, fid).data, result=True)
