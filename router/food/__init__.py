@@ -1,4 +1,4 @@
-from flask import Blueprint, request
+from flask import Blueprint, Response, request, stream_with_context
 import db.user
 import db.session
 import db.food
@@ -33,3 +33,14 @@ def get_food_list():
     sid = request.form.get('sid')
     
     return db.food.get_list_info(sid).to_response()
+
+@food_bp.route('/chat', methods=['GET'])
+def chat():
+    sid = request.form.get('sid')
+    fid_list = request.form.getlist('fid')
+    
+    info = db.food.chat_food(sid, fid_list)
+    if info.result == False:
+        return info.to_response()
+
+    return Response(stream_with_context(info.data), content_type='text/plain')
