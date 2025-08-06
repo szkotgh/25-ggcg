@@ -101,42 +101,45 @@ def chat_food(sid: str, fid_list: list) -> utils.ResultDTO:
             return food_info
         food_info_list.append(food_info.data['food_info'])
 
-    client = OpenAI()
-    datetime_now = datetime.now()
-    
-    prompt = f'''선택된 식품 정보로 레시피 추천을 생성.
-    선택된 식품 정보로만 되도록 레시피를 생성하되, 레시피 생성이 어려울 경우 1~2개 정도는 선택된 식품 정보에 없는 식품 추가 가능.
-    Markdown 형식이 아닌 일반 plain text로 응답.
-    재료는 줄바꿈 리스트(- , - , - ) 형식으로 답해야 함.
-    조리 방법은 줄바꿈 리스트(1. 2. 3.) 형식으로 답해야 함.
-    현재 시간에 알맞는 음식으로 추천. 현재 한국 시간(24시간제): {datetime_now.strftime('%H:%M')}). 6-10시: 아침음식 추천, 11-14시: 점심음식 추천, 15-17시 간식 추천, 18-21시: 저녁음식 추천, 22-5시: 야식 추천
-    재료를 말할 땐 재료를 명확하게 말해야 함(혼합음료 -> 이온음료 등으로 명확하게 기제)
-    한 끼에 적합한 양으로 추천(1인분 기준, 2인분 이상은 추가로 기재)
-    
-    아래의 형식으로 응답. 꺽쇠괄호 안에는 생성해야하는 정보를 뜻함(꺽쇠괄호 내용 출력 금지):
-<레시피 추천 격려 문구(가지고 계신 식품을 아래 레시피로 즐겨보세요! 등. 사용자가 가지고 있는 식품을 활용해보라는 문구를 강조)>\n
-레시피: <요리 제목>\n
-재료: <재료 목록>\n
-조리 방법: <조리 방법>\n
-<간단한 코멘트>
+    try:
+        client = OpenAI()
+        datetime_now = datetime.now()
+        
+        prompt = f'''선택된 식품 정보로 레시피 추천을 생성.
+        선택된 식품 정보로만 되도록 레시피를 생성하되, 레시피 생성이 어려울 경우 1~2개 정도는 선택된 식품 정보에 없는 식품 추가 가능.
+        Markdown 형식이 아닌 일반 plain text로 응답.
+        재료는 줄바꿈 리스트(- , - , - ) 형식으로 답해야 함.
+        조리 방법은 줄바꿈 리스트(1. 2. 3.) 형식으로 답해야 함.
+        현재 시간에 알맞는 음식으로 추천. 현재 한국 시간(24시간제): {datetime_now.strftime('%H:%M')}). 6-10시: 아침음식 추천, 11-14시: 점심음식 추천, 15-17시 간식 추천, 18-21시: 저녁음식 추천, 22-5시: 야식 추천
+        재료를 말할 땐 재료를 명확하게 말해야 함(혼합음료 -> 이온음료 등으로 명확하게 기제)
+        한 끼에 적합한 양으로 추천(1인분 기준, 2인분 이상은 추가로 기재)
+        
+        아래의 형식으로 응답. 꺽쇠괄호 안에는 생성해야하는 정보를 뜻함(꺽쇠괄호 내용 출력 금지):
+    <레시피 추천 격려 문구(가지고 계신 식품을 아래 레시피로 즐겨보세요! 등. 사용자가 가지고 있는 식품을 활용해보라는 문구를 강조)>\n
+    레시피: <요리 제목>\n
+    재료: <재료 목록>\n
+    조리 방법: <조리 방법>\n
+    <간단한 코멘트>
 
-    선택된 식품 정보:'''
-    for food_info in food_info_list:
-        prompt += f"\n- {food_info['name']}(용량: {food_info['volume']}, 식품 유형: {food_info['type']})"
-    
-    response = client.responses.create(
-        model="gpt-4.1-nano",
-        input=[
-            {
-                "role": "user",
-                "content": prompt,
-            },
-        ],
-        stream=False,
-    )
-    
-    recipe_text = response.output[0].content[0].text
-    return utils.ResultDTO(code=200, message="대화가 성공적으로 생성되었습니다.", data=recipe_text, result=True)
+        선택된 식품 정보:'''
+        for food_info in food_info_list:
+            prompt += f"\n- {food_info['name']}(용량: {food_info['volume']}, 식품 유형: {food_info['type']})"
+        
+        response = client.responses.create(
+            model="gpt-4.1-nano",
+            input=[
+                {
+                    "role": "user",
+                    "content": prompt,
+                },
+            ],
+            stream=False,
+        )
+        
+        recipe_text = response.output[0].content[0].text
+        return utils.ResultDTO(code=200, message="대화가 성공적으로 생성되었습니다.", data=recipe_text, result=True)
+    except Exception as e:
+        return utils.ResultDTO(code=500, message=f"대화 생성 중 오류가 발생했습니다: {str(e)}", result=False)
 
 def regi_food_with_barcode(sid:str, barcode:str, food_count:int) -> utils.ResultDTO:
     session_info = db.session.get_info(sid)

@@ -38,9 +38,5 @@ def get_food_list():
 def chat():
     sid = request.form.get('sid')
     fid_list = request.form.getlist('fid')
-    
-    info = db.food.chat_food(sid, fid_list)
-    if info.result == False:
-        return info.to_response()
 
-    return info.to_response()
+    return db.food.chat_food(sid, fid_list).to_response()
