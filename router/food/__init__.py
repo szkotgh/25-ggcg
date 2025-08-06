@@ -43,4 +43,4 @@ def chat():
     if info.result == False:
         return info.to_response()
 
-    return Response(stream_with_context(info.data), content_type='text/plain')
+    return info.to_response()
