@@ -69,6 +69,43 @@ def get_info(sid: str, fcid: str) -> utils.ResultDTO:
     
     return utils.ResultDTO(code=200, message="성공적으로 조회했습니다.", data={'chat_info': row, 'food_ids': food_ids}, result=True)
 
+def get_list_info(sid: str) -> utils.ResultDTO:
+    session_info = db.session.get_info(sid)
+    if not session_info.result:
+        return session_info
+    if session_info.data['session_info']['is_active'] == 0:
+        return utils.ResultDTO(code=401, message="비활성화된 세션입니다.", result=False)
+    
+    uid = session_info.data['session_info']['uid']
+    
+    conn = db.get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute("SELECT * FROM food_chat WHERE uid = ?", (uid,))
+    rows = cursor.fetchall()
+    
+    if not rows:
+        db.close_db_connection(conn)
+        return utils.ResultDTO(code=404, message="등록된 대화 정보가 없습니다.", result=False)
+    
+    chat_list = []
+    for row in rows:
+        row = dict(row)
+        # food_chat_items에서 해당 fcid에 대한 식품 ID 목록 조회
+        cursor.execute("SELECT fid FROM food_chat_items WHERE fcid = ?", (row['fcid'],))
+        items = cursor.fetchall()
+        
+        food_ids = [item['fid'] for item in items]
+        
+        chat_list.append({
+            'chat_info': row,
+            'food_ids': food_ids
+        })
+    
+    db.close_db_connection(conn)
+    
+    return utils.ResultDTO(code=200, message="성공적으로 조회했습니다.", data={'chat_list': chat_list}, result=True)
+
 def create_chat_db(sid: str, fid_list: list) -> utils.ResultDTO:
     session_info = db.session.get_info(sid)
     if not session_info.result:

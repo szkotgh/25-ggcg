@@ -16,3 +16,9 @@ def create_food_chat():
     fid_list = request.form.getlist('fid')
 
     return db.food_chat.create_chat_db(sid, fid_list).to_response()
+
+@chat_bp.route('/list', methods=['GET'])
+def list_food_chats():
+    sid = request.args.get('sid')
+
+    return db.food_chat.get_list_info(sid).to_response()
