@@ -65,6 +65,12 @@ class EmailSender:
         plain = f'안녕하세요 {user_info.data["user_info"]["name"]}님, 서비스 가입을 환영합니다.'
         html = render_template('email/welcome_service_email.html', user_info=user_info.data["user_info"])
         self.send_email(receiver_email, subject, plain, html)
+        
+    def send_deleted_account_email(self, receiver_email: str, user_info: utils.ResultDTO):
+        subject = '[스마일알러지] 서비스 탈퇴처리 되었습니다.'
+        plain = f'안녕하세요 {user_info.data["user_info"]["name"]}님, 서비스 탈퇴가 완료되었습니다.'
+        html = render_template('email/deleted_account_email.html', user_info=user_info.data["user_info"])
+        self.send_email(receiver_email, subject, plain, html)
     
     def send_session_created_email(self, receiver_email: str, sid: str):
         session_info = db.session.get_info(sid).data['session_info']

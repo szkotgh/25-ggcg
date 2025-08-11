@@ -1,15 +1,18 @@
 from flask import Blueprint, Response, request, stream_with_context
+from router.food.chat import chat_bp
 import db.user
 import db.session
 import db.food
+import db.food_chat
 import src.utils as utils
 
 food_bp = Blueprint('food', __name__, url_prefix='/food')
+food_bp.register_blueprint(chat_bp)
 
 @food_bp.route('', methods=['GET'])
 def get_food_info():
-    sid = request.form.get('sid')
-    fid = request.form.get('fid')
+    sid = request.args.get('sid')
+    fid = request.args.get('fid')
     
     return db.food.get_info(sid, fid).to_response()
 
@@ -30,13 +33,6 @@ def delete_food():
 
 @food_bp.route('/list', methods=['GET'])
 def get_food_list():
-    sid = request.form.get('sid')
+    sid = request.args.get('sid')
     
     return db.food.get_list_info(sid).to_response()
-
-@food_bp.route('/chat', methods=['GET'])
-def chat():
-    sid = request.form.get('sid')
-    fid_list = request.form.getlist('fid')
-
-    return db.food.chat_food(sid, fid_list).to_response()

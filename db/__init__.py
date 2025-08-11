@@ -49,6 +49,7 @@ def init_db():
         CREATE TABLE IF NOT EXISTS foods (
             fid TEXT PRIMARY KEY,
             uid TEXT NOT NULL,
+            is_active BOOLEAN NOT NULL DEFAULT 1,
             name TEXT NOT NULL,
             type TEXT NOT NULL,
             description TEXT NOT NULL,
@@ -58,9 +59,29 @@ def init_db():
             barcode TEXT NOT NULL,
             expiration_date_desc TEXT,
             expiration_date DATE NOT NULL,
+            updated_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
             created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
             FOREIGN KEY (uid) REFERENCES users(uid)
         );
+
+        CREATE TABLE IF NOT EXISTS food_chat (
+            fcid TEXT PRIMARY KEY,
+            uid TEXT NOT NULL,
+            status TEXT NOT NULL DEFAULT 'created',
+            response TEXT DEFAULT NULL,
+            usage_input_token INTEGER NOT NULL DEFAULT 0,
+            usage_output_token INTEGER NOT NULL DEFAULT 0,
+            created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+            updated_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+            FOREIGN KEY (uid) REFERENCES users(uid)
+        );
+        CREATE TABLE IF NOT EXISTS food_chat_items (
+            fcid TEXT NOT NULL,
+            fid TEXT NOT NULL,
+            FOREIGN KEY (fcid) REFERENCES food_chat(fcid),
+            FOREIGN KEY (fid) REFERENCES foods(fid),
+            PRIMARY KEY (fcid, fid)
+        )
     ''')
     
     conn.commit()

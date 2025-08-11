@@ -49,8 +49,8 @@ def deactivate_session(sid: str) -> utils.ResultDTO:
 def create_session(email: str, password: str, user_agent: str, ip_address: str) -> utils.ResultDTO:
     if not utils.is_valid_email(email):
         return utils.ResultDTO(code=400, message="유효하지 않은 이메일 형식입니다.", result=False)
-    if not utils.is_valid_password(password):
-        return utils.ResultDTO(code=400, message="유효하지 않은 비밀번호 형식입니다.", result=False)
+    if not password:
+        return utils.ResultDTO(code=400, message="비밀번호를 입력해주세요.", result=False)
 
     # 사용자 검증
     uid = db.user.validate_user(email, password)
@@ -69,8 +69,8 @@ def create_session(email: str, password: str, user_agent: str, ip_address: str) 
                        (sid, uid.data['uid'], user_agent, ip_address, expires_at))
         conn.commit()
         
-        # 최신 날짜 순으로 5개 세션만 유지. 나머지는 is_activate를 0으로 설정
-        cursor.execute("UPDATE user_sessions SET is_active = 0 WHERE uid = ? AND sid NOT IN (SELECT sid FROM user_sessions WHERE uid = ? ORDER BY created_at DESC LIMIT 5)", (uid.data['uid'], uid.data['uid']))
+        # 최신 날짜 순으로 1개 세션만 유지. 나머지는 is_activate를 0으로 설정
+        cursor.execute("UPDATE user_sessions SET is_active = 0 WHERE uid = ? AND sid NOT IN (SELECT sid FROM user_sessions WHERE uid = ? ORDER BY created_at DESC LIMIT 1)", (uid.data['uid'], uid.data['uid']))
         conn.commit()
         
         # 이메일 알림

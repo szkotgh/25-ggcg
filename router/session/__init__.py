@@ -6,7 +6,7 @@ session_bp = Blueprint('session', __name__, url_prefix='/session')
 
 @session_bp.route('', methods=['GET'])
 def get_session_info():
-    sid = request.form.get('sid')
+    sid = request.args.get('sid')
 
     return db.session.get_info(sid).to_response()
 
@@ -27,7 +27,7 @@ def delete_session():
 
 @session_bp.route('/list', methods=['GET'])
 def list_sessions():
-    sid = request.form.get('sid')
+    sid = request.args.get('sid')
 
     sessions = db.session.get_session_list(sid)
     
