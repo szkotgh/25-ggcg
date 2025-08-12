@@ -16,11 +16,15 @@ def delete_food(sid: str, fid: str) -> utils.ResultDTO:
     
     uid = session_info.data['session_info']['uid']
     
+    food_info = get_info(sid, fid)
+    if not food_info.result:
+        return food_info
+    
     conn = db.get_db_connection()
     cursor = conn.cursor()
     
-    # 식품 ID와 유저 ID가 일치하는 식품 정보 삭제
-    cursor.execute("DELETE FROM foods WHERE fid = ? AND uid = ?", (fid, uid))
+    # 식품 ID와 유저 ID가 일치하는 식품 정보 업데이트
+    cursor.execute("UPDATE foods SET is_active = FALSE, updated_at = datetime('now', '+9 hours') WHERE fid = ?", (fid,))
     conn.commit()
     
     if cursor.rowcount == 0:
@@ -72,6 +76,8 @@ def get_list_info(sid: str) -> utils.ResultDTO:
     # 잘못된 세션 ID일 경우 실패 처리
     if not session_info.result:
         return session_info
+    if session_info.data['session_info']['is_active'] == 0:
+        return utils.ResultDTO(code=401, message="비활성화된 세션입니다.", result=False)
     
     uid = session_info.data['session_info']['uid']
     

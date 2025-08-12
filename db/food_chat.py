@@ -116,8 +116,8 @@ def create_chat_db(sid: str, fid_list: list) -> utils.ResultDTO:
     
     if not fid_list:
         return utils.ResultDTO(code=400, message="식품 ID 목록이 비어 있습니다.", result=False)
-    if len(fid_list) < 2:
-        return utils.ResultDTO(code=400, message="식품 ID 목록은 최소 2개 이상이어야 합니다.", result=False)
+    if len(fid_list) < 1:
+        return utils.ResultDTO(code=400, message="식품 ID 목록은 최소 1개 이상이어야 합니다.", result=False)
     if len(fid_list) > 10:
         return utils.ResultDTO(code=400, message="식품 ID 목록은 최대 10개까지 가능합니다.", result=False)
     
