@@ -86,6 +86,31 @@ def get_info(uid: str) -> utils.ResultDTO:
     db.close_db_connection(conn)
     return utils.ResultDTO(code=200, message="유저 정보를 성공적으로 조회했습니다.", data={'user_info': user_info}, result=True)
 
+def get_info_by_email(email: str) -> utils.ResultDTO:
+    if not utils.is_valid_email(email):
+        return utils.ResultDTO(code=400, message="유효하지 않은 이메일 형식입니다.", result=False)
+
+    conn = db.get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM users WHERE email = ?", (email,))
+    row = cursor.fetchone()
+
+    if not row:
+        db.close_db_connection(conn)
+        return utils.ResultDTO(code=404, message="가입된 계정 정보를 찾을 수 없습니다.", result=False)
+
+    user_info = {
+        'uid': row['uid'],
+        'email': row['email'],
+        'name': row['name'],
+        'profile_url': row['profile_url'],
+        'created_at': row['created_at']
+    }
+
+    db.close_db_connection(conn)
+    return utils.ResultDTO(code=200, message="유저 정보를 성공적으로 조회했습니다.", data={'user_info': user_info}, result=True)
+
 def create_user(email:str, password:str, name:str) -> utils.ResultDTO:
     if not utils.is_valid_email(email):
         return utils.ResultDTO(code=400, message="이메일이 올바르지 않습니다.", result=False)
@@ -248,8 +273,104 @@ def verify_code(user_email: str, verification_code: str) -> utils.ResultDTO:
     db.close_db_connection(conn)
     return utils.ResultDTO(code=404, message="올바르지 않은 이메일입니다.", result=False)
 
+def get_find_password_link_info(link_hash: str) -> utils.ResultDTO:
+    if not link_hash:
+        return utils.ResultDTO(code=400, message="해쉬 정보가 필요합니다.", result=False)
+
+    conn = db.get_db_connection()
+    cursor = conn.cursor()
+
+    cursor.execute("SELECT * FROM user_password_find_link WHERE link_hash = ?", (link_hash,))
+    row = cursor.fetchone()
+
+    if not row:
+        db.close_db_connection(conn)
+        return utils.ResultDTO(code=404, message="해당 링크 정보를 찾을 수 없습니다.", result=False)
+
+    # create_at이 3분이 지난 is_used가 False이고 is_active가 True인 경우 is_active를 False로 변경
+    if not utils.is_minutes_passed(row['created_at'], 3) and row['is_active']:
+        cursor.execute("UPDATE user_password_find_link SET is_active = 0 WHERE link_hash = ?", (link_hash,))
+        conn.commit()
+
+    deactive_info = {
+        'email': row['email'],
+        'link_hash': row['link_hash'],
+        'is_used': row['is_used'],
+        'is_active': row['is_active'],
+        'created_at': row['created_at']
+    }
+
+    db.close_db_connection(conn)
+    return utils.ResultDTO(code=200, message="링크 정보 조회 성공", data={'pw_find_info': deactive_info}, result=True)
+
 def find_password(user_email: str) -> utils.ResultDTO:
     if not utils.is_valid_email(user_email):
         return utils.ResultDTO(code=400, message="이메일 형식이 올바르지 않습니다.", result=False)
     
-    return utils.ResultDTO(code=400, message="비밀번호 찾기 기능은 현재 지원하지 않습니다.", result=False)
+    user_info = get_info_by_email(user_email)
+    if not user_info.result:
+        return user_info
+    
+    # db 생성. user_password_find_link에 이미 is_used가 False인 link_hash가 있다면, 해당 컬럼의 created_at이 3분이 지났을 경우 재설정 가능
+    conn = db.get_db_connection()
+    cursor = conn.cursor()
+    
+    # 기존 사용되지 않은 링크가 있는지 확인
+    cursor.execute("SELECT created_at FROM user_password_find_link WHERE email = ? AND is_used = 0", (user_email,))
+    row = cursor.fetchone()
+    
+    if row:
+        created_at = row[0]
+        # 3분이 지나지 않았다면 기존 링크 사용
+        if not utils.is_minutes_passed(created_at, 3):
+            created_at_datetime = utils.str_to_datetime(created_at)
+            now = utils.get_current_datetime()
+            diff_datetime = created_at_datetime + utils.timedelta(minutes=3) - now
+            total_seconds = max(0, int(diff_datetime.total_seconds()))
+            diff_str = f"{total_seconds // 60}:{total_seconds % 60:02d}"
+            
+            db.close_db_connection(conn)
+            return utils.ResultDTO(code=400, message=f"잠시 후 다시 시도하세요. (남은 시간: {diff_str})", result=False)
+        else:
+            # 3분이 지났다면 기존 링크를 비활성화
+            cursor.execute("UPDATE user_password_find_link SET is_active = 0, update_at = CURRENT_TIMESTAMP WHERE email = ? AND is_used = 0", (user_email,))
+    
+    # 새로운 링크 생성
+    link_hash = utils.gen_hash(64)
+    cursor.execute("INSERT INTO user_password_find_link (email, link_hash) VALUES (?, ?)", (user_email, link_hash))
+    conn.commit()
+    db.close_db_connection(conn)
+
+    src.email.service.send_password_find_email(user_email, user_info, link_hash)
+    return utils.ResultDTO(code=200, message="비밀번호 찾기 이메일이 전송되었습니다.", result=True)
+
+def change_password(link_hash: str, new_password: str) -> utils.ResultDTO:
+    if not link_hash:
+        return utils.ResultDTO(code=400, message="해쉬 정보가 필요합니다.", result=False)
+    if not new_password:
+        return utils.ResultDTO(code=400, message="새로운 비밀번호가 필요합니다.", result=False)
+
+    link_info = get_find_password_link_info(link_hash)
+    if not link_info.result:
+        return link_info
+
+    user_email = link_info.data['pw_find_info']['email']
+
+    # 비밀번호 변경
+    salt = utils.gen_hash(16)
+    hashed_password = utils.str_to_hash(new_password + salt)
+
+    conn = db.get_db_connection()
+    cursor = conn.cursor()
+    try:
+        cursor.execute("UPDATE users SET password = ?, salt = ? WHERE email = ?", (hashed_password, salt, user_email))
+        # 링크 사용 처리
+        cursor.execute("UPDATE user_password_find_link SET is_used = 1 WHERE link_hash = ?", (link_hash,))
+        conn.commit()
+    except Exception as e:
+        conn.rollback()
+        return utils.ResultDTO(code=500, message=f"비밀번호 변경 중 오류가 발생했습니다: {e}", result=False)
+    finally:
+        db.close_db_connection(conn)
+
+    return utils.ResultDTO(code=200, message="비밀번호를 성공적으로 변경했습니다.", result=True)

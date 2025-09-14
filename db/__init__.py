@@ -33,6 +33,17 @@ def init_db():
             FOREIGN KEY (email) REFERENCES email_verification(email)
         );
         
+        CREATE TABLE IF NOT EXISTS user_password_find_link (
+            email TEXT NOT NULL,
+            link_hash TEXT NOT NULL,
+            is_used BOOLEAN NOT NULL DEFAULT FALSE,
+            is_active BOOLEAN NOT NULL DEFAULT TRUE,
+            update_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+            created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+            
+            FOREIGN KEY (email) REFERENCES email_verification(email)
+        );
+
         CREATE TABLE IF NOT EXISTS user_sessions (
             sid TEXT PRIMARY KEY,
             uid TEXT NOT NULL,
@@ -46,12 +57,23 @@ def init_db():
             FOREIGN KEY (uid) REFERENCES users(uid)
         );
         
+        CREATE TABLE IF NOT EXISTS user_session_deactive_link (
+            sid TEXT PRIMARY KEY,
+            link_hash TEXT NOT NULL,
+            is_used BOOLEAN NOT NULL DEFAULT FALSE,
+            update_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+            created_at TIMESTAMP DEFAULT (datetime('now', '+9 hours')),
+
+            FOREIGN KEY (sid) REFERENCES user_sessions(sid)
+        );
+
         CREATE TABLE IF NOT EXISTS foods (
             fid TEXT PRIMARY KEY,
             uid TEXT NOT NULL,
             is_active BOOLEAN NOT NULL DEFAULT 1,
             name TEXT NOT NULL,
             type TEXT NOT NULL,
+            ingredients TEXT DEFAULT '정보없음',
             description TEXT NOT NULL,
             count INTEGER NOT NULL DEFAULT 0,
             volume TEXT DEFAULT NULL,

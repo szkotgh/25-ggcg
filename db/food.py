@@ -151,6 +151,12 @@ def regi_food_with_barcode(sid:str, barcode:str, food_count:int) -> utils.Result
     except:
         pass
     
+    # 식품 원재료 가져오기
+    ingredients = '정보없음'
+    if barcode == "8801043014830": # 농심 신라면
+        ingredients = "면/소맥분(밀:호주산, 미국산), 팜유(말레이시아산), 감자전분(덴마크산), 변성전분, 난각칼슘, 정제염, 이스트조미분, 면류첨가알칼리제(산도조절제), 혼합제제(산도조절제), 올리고녹차풍미액, 비타민B2, 스프류: 복합조미간장분말, 정제염, 버섯풍미분말, 정백당, 비프조미분, 변성전분, 매운탕분말, 사골된장분말, 양파풍미분, 생고추조미분말, 칠리맛조미분, 수육조미분, 포도당, 양념구이조미분, 볶음양념분, 후추가루, 조미양념분, 분말된장, 치킨풍미분말, 마늘추출물분말, 육수조미분말, 5’-리보뉴클레오티드이나트륨, 호박산이나트륨, 양파조미베이스, 장국양념분말, 다시마정미추출분말, 매운맛조미분, 고춧가루, 분말카라멜(카라멜색소, 물엿분말), 생강추출물분말, 조미건백, 건파, 건표고버섯, 건당근, 건청경채, 조미건조홍고추"
+    
+    
     # DB 작성
     fid = utils.gen_hash(16)
     uid = session_info.data['session_info']['uid']
@@ -158,8 +164,8 @@ def regi_food_with_barcode(sid:str, barcode:str, food_count:int) -> utils.Result
     cursor = conn.cursor()
 
     try:
-        cursor.execute("INSERT INTO foods (fid, uid, name, type, description, count, volume, image_url, barcode, expiration_date_desc, expiration_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
-                    (fid, uid, food_name, food_type, f"[메모] {food_name}", food_count, food_volume, food_image_url, barcode, food_expiration_date_desc, utils.datetime_to_str(food_expiration_date)))
+        cursor.execute("INSERT INTO foods (fid, uid, name, type, ingredients, description, count, volume, image_url, barcode, expiration_date_desc, expiration_date) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    (fid, uid, food_name, food_type, ingredients, f"[메모] {food_name}", food_count, food_volume, food_image_url, barcode, food_expiration_date_desc, utils.datetime_to_str(food_expiration_date)))
         conn.commit()
         db.close_db_connection(conn)
     except Exception as e:

@@ -72,12 +72,20 @@ class EmailSender:
         html = render_template('email/deleted_account_email.html', user_info=user_info.data["user_info"])
         self.send_email(receiver_email, subject, plain, html)
     
-    def send_session_created_email(self, receiver_email: str, sid: str):
+    def send_session_created_email(self, receiver_email: str, sid: str, session_deactive_link_hash: str):
         session_info = db.session.get_info(sid).data['session_info']
         user_info = db.user.get_info(session_info['uid']).data['user_info']
         subject = '[스마일알러지] 로그인 알림'
         plain = f'로그인 알림: {user_info["name"]}님, 새로운 환경에서 로그인 되었습니다.'
-        html = render_template('email/session_created_email.html', user_info=user_info, session_info=session_info)
+        session_deactive_link = f"{os.environ['SERVER_URL']}/session/deactive?link_hash={session_deactive_link_hash}"
+        html = render_template('email/session_created_email.html', user_info=user_info, session_info=session_info, session_deactive_link=session_deactive_link)
+        self.send_email(receiver_email, subject, plain, html)
+
+    def send_password_find_email(self, receiver_email: str, user_info: utils.ResultDTO, link_hash: str):
+        subject = '[스마일알러지] 비밀번호 찾기 요청'
+        plain = f'비밀번호 찾기 요청: {user_info.data["user_info"]["name"]}님, 비밀번호 변경 요청이 발생했습니다.'
+        password_find_url = f"{os.environ['SERVER_URL']}/user/find_password?link_hash={link_hash}"
+        html = render_template('email/password_find_email.html', password_find_url=password_find_url, user_info=user_info.data["user_info"])
         self.send_email(receiver_email, subject, plain, html)
     
 service = EmailSender()
